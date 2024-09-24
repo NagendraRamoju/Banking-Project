@@ -1,60 +1,63 @@
 pipeline {
-  agent any
-     tools {
-       maven 'M2_HOME'
-           }
- 
-  stages {
-    stage('Git Checkout') {
-      steps {
-        echo 'This stage is to clone the repo from github'
-        git branch: 'main', url: 'https://github.com/challadevops1/Banking-Project.git'
-                        }
+    agent any
+
+    tools {
+        // Install the Maven version configured as "M3" and add it to the path.
+        maven "M2_HOME"
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                // Get some code from a GitHub repository
+                git 'https://github.com/NagendraRamoju/banking-finance.git'
+
+                // Run Maven on a Unix agent.
+                sh "mvn -Dmaven.test.failure.ignore=true clean package"
+
             }
-    stage('Create Package') {
-      steps {
-        echo 'This stage will compile, test, package my application'
-        sh 'mvn package'
-                          }
-            }
-    stage('Generate Test Report') {
-      steps {
-        echo 'This stage generate Test report using TestNG'
-        publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: '/var/lib/jenkins/workspace/CICD_JOB/target/surefire-reports', reportFiles: 'index.html', reportName: 'HTML Report', reportTitles: '', useWrapperFileDirectly: true])
-                          }
-            }
-    stage('Create-Image') {
-      steps {
-        echo 'This stage will create a image of my application'
-        sh 'docker build -t cbabu85/banking-apps:1.0 .'
-                          }
-            }
-    stage('Docker-Login') {
-      steps {
-        withCredentials([usernamePassword(credentialsId: 'Docker-Login-ID', passwordVariable: 'dockerpass', usernameVariable: 'dockerlogin')]) {
-        sh 'docker login -u ${dockerlogin} -p ${dockerpass}'
-              }
-                          }
-            }
-    stage('Docker Push-Image') {
-      steps {
-        echo 'This stage will push my new image to the dockerhub'
-        sh 'docker push cbabu85/banking-apps:1.0'
-            }
-                              }
-    stage('CreateNew Server then configure and Deploy') {
-      steps {
-        withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'awscredentials', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-          dir('terraform-files') {
-          sh 'sudo chmod 600 newkeypairaws.pem'
-          sh 'terraform init'
-          sh 'terraform validate'
-          sh 'terraform apply --auto-approve'
-                                        }            
-                                   }
-      
-                               }
-                   }
-       }
+        }
+        stage ('Genarate Test Reports') {
+             steps {
+                 publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: '/var/lib/jenkins/workspace/project1/target/surefire-reports', reportFiles: 'index.html', reportName: 'HTML Report', reportTitles: '', useWrapperFileDirectly: true])
+      }
 }
-  
+        stage ('Create Docker Image') {
+             steps {
+                sh 'docker build -t nagendraramoju/banking-project-demo .'
+               }
+         }
+          stage ('Docker-Login') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'Docker-login', passwordVariable: 'dockerpassword', usernameVariable: 'dockerlogin')]) {
+                   sh 'docker login -u ${dockerlogin} -p ${dockerpassword}'
+                 }
+             }
+  }
+          stage('push-Image') {
+             steps {
+             sh 'docker push nagendraramoju/banking-project-demo'
+ }
+
+}     
+
+        stage('Config & Deployment') {
+           steps {
+              withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'AwsAccessKey', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+               dir('terraform-files') {
+               sh 'sudo chmod 600 slavekey.pem'
+               sh 'terraform init'
+               sh 'terraform validate'
+               sh 'terraform apply --auto-approve'
+}
+}
+}
+}
+
+
+}
+
+
+
+
+      }

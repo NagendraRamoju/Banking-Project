@@ -4,10 +4,10 @@
   connection: ssh
   tasks:
   - name: updating the New Ec2 Machine 
-    command: sudo yum update
+    command: sudo apt update
 
   - name: Install Docker
-    command: sudo yum install docker -y
+    command: sudo apt install docker -y
     become: yes
     become_user: root
 
@@ -17,4 +17,4 @@
     become_user: root
 
   - name: Deploy the Image and Run as Container
-    command: docker run -itd -p 8084:8081 cbabu85/banking-apps:1.0
+    command: docker run -itd -p 8084:8081 nagendraramoju/banking-project-demo
